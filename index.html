@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vẽ Đồ Thị 2D & 3D - Toán Học</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            color-scheme: light;
+        }
+
+        :root.dark-mode {
+            color-scheme: dark;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            height: 100vh;
+            background-color: #f5f5f5;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        body.dark-mode header {
+            background: linear-gradient(135deg, #5568d3 0%, #6a3a8a 100%);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        header h1 {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .theme-toggle,
+        .mode-select {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mode-select {
+            padding: 8px 16px;
+        }
+
+        .theme-toggle:hover,
+        .mode-select:hover {
+            opacity: 0.9;
+        }
+
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            width: 320px;
+            border-right: 1px solid #e0e0e0;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        body.dark-mode .left-panel {
+            background: #2a2a2a;
+            border-right: 1px solid #404040;
+        }
+
+        .input-section {
+            padding: 16px;
+            border-bottom: 1px solid #e0e0e0;
+            transition: border-color 0.3s ease;
+        }
+
+        body.dark-mode .input-section {
+            border-bottom: 1px solid #404040;
+        }
+
+        .input-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        body.dark-mode .input-section h3 {
+            color: #e0e0e0;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-wrapper input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            background: white;
+            color: #333;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .input-wrapper input {
+            background: #3a3a3a;
+            border-color: #505050;
+            color: #e0e0e0;
+        }
+
+        .input-wrapper button {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .input-wrapper button:hover {
+            background: #764ba2;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mode-hint {
+            background: #e8f4f8;
+            border-left: 4px solid #45B7D1;
+            padding: 10px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #333;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        body.dark-mode .mode-hint {
+            background: #1e3a40;
+            border-left-color: #4db8d1;
+            color: #b0e0e6;
+        }
+
+        .mode-hint strong {
+            display: block;
+            color: #0277BD;
+            margin-bottom: 4px;
+        }
+
+        body.dark-mode .mode-hint strong {
+            color: #64b5f6;
+        }
+
+        .examples-section {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e0e0e0;
+            transition: border-color 0.3s ease;
+        }
+
+        body.dark-mode .examples-section {
+            border-bottom: 1px solid #404040;
+        }
+
+        .examples-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #667eea;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+            user-select: none;
+        }
+
+        .examples-title:hover {
+            color: #764ba2;
+        }
+
+        .examples-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .example-btn {
+            text-align: left;
+            padding: 10px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            color: #333;
+        }
+
+        body.dark-mode .example-btn {
+            background: #3a3a3a;
+            border-color: #505050;
+            color: #e0e0e0;
+        }
+
+        .example-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .example-btn .name {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .example-btn .formula {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            opacity: 0.8;
+            white-space: pre-wrap;
+        }
+
+        .example-btn .desc {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 2px;
+        }
+
+        .functions-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .functions-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        body.dark-mode .functions-section h3 {
+            color: #e0e0e0;
+        }
+
+        .functions-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .function-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            color: #333;
+        }
+
+        body.dark-mode .function-item {
+            background: #3a3a3a;
+            color: #e0e0e0;
+        }
+
+        .function-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .function-expr {
+            flex: 1;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .delete-btn {
+            padding: 4px 8px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background: #ff5252;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            padding: 16px;
+            font-style: italic;
+        }
+
+        body.dark-mode .empty-message {
+            color: #666;
+        }
+
+        .help-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 11px;
+            color: #666;
+            transition: border-color 0.3s ease, color 0.3s ease;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        body.dark-mode .help-section {
+            border-top: 1px solid #404040;
+            color: #999;
+        }
+
+        .help-section p {
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .help-section strong {
+            display: block;
+            color: #333;
+            margin-top: 6px;
+            margin-bottom: 2px;
+        }
+
+        body.dark-mode .help-section strong {
+            color: #e0e0e0;
+        }
+
+        .right-panel {
+            flex: 1;
+            background: #fafafa;
+            padding: 16px;
+            overflow: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        body.dark-mode .right-panel {
+            background: #1a1a1a;
+        }
+
+        #canvas2d,
+        #canvas3d {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        body.dark-mode #canvas2d,
+        body.dark-mode #canvas3d {
+            background: #2a2a2a;
+            border-color: #404040;
+        }
+
+        .zoom-info {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            display: none;
+        }
+
+        .zoom-info.visible {
+            display: block;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Vẽ Đồ Thị 2D & 3D - Toán Học</h1>
+            <div class="header-controls">
+                <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙 Dark</button>
+                <select id="modeSelect" class="mode-select">
+                    <option value="2d">📊 Chế độ 2D (Oxy)</option>
+                    <option value="3d">🎯 Chế độ 3D (Oxyz)</option>
+                </select>
+            </div>
+        </header>
+
+        <div class="main">
+            <div class="left-panel">
+                <div class="input-section">
+                    <h3>Nhập phương trình</h3>
+                    <div class="input-wrapper">
+                        <input
+                            type="text"
+                            id="functionInput"
+                            placeholder="VD: sin(x) hoặc x=1"
+                        />
+                        <button onclick="addFunction()">Thêm</button>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div id="modeHint" class="mode-hint">
+                        <strong>📋 Chế độ 2D:</strong>
+Nhập dạng: y = f(x), x=c
+VD: sin(x), x^2, log(x)
+Hoặc đường tròn: (x-a)^2+(y-b)^2=R^2
+VD: (x-1)^2+(y+2)^2=9
+                    </div>
+
+                    <div class="examples-section">
+                        <div
+                            class="examples-title"
+                            onclick="toggleExamples()"
+                        >
+                            <span id="exampleToggle">▼</span>
+                            Ví dụ nhanh
+                        </div>
+                        <div
+                            id="examplesContainer"
+                            class="examples-grid"
+                        ></div>
+                    </div>
+
+                    <div class="functions-section">
+                        <h3>Danh sách phương trình</h3>
+                        <div
+                            id="functionsList"
+                            class="functions-list"
+                        ></div>
+                    </div>
+
+                    <div class="help-section">
+<strong>Hàm hỗ trợ:</strong>
+sin, cos, tan, sqrt, abs, exp, log, pow
+
+<strong>Toán tử:</strong>
++, -, *, /, ^
+
+<strong>Đường thẳng:</strong>
+x=1, y=2 (đường thẳng đứng/ngang)
+
+<strong>Đường tròn:</strong>
+x^2+y^2=9 hoặc (x-1)^2+(y+2)^2=9
+
+<strong>❌ Lỗi thường:</strong>
+Không dùng: 2x+3y=6 (sai)
+Dùng: y=1-x, x^2+y^2=4 (đúng)
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <canvas id="canvas2d"></canvas>
+                <div id="canvas3d" class="hidden"></div>
+                <div class="zoom-info" id="zoomInfo"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // <CHANGE> Initialize theme from localStorage
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+                document.getElementById('themeBtn').textContent = '☀️ Light';
+            }
+        }
+
+        // <CHANGE> Toggle theme and save preference
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark-mode');
+            const isDark = document.documentElement.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.getElementById('themeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
+            render();
+        }
+
+        // ============ STATE MANAGEMENT ============
+        const state = {
+            mode: '2d',
+            functions: [],
+            showExamples: true,
+            scene: null,
+            renderer: null,
+            camera: null,
+            meshes: [],
+            zoomLevel: 1
+        };
+
+        // ============ EXAMPLES ============
+        const EXAMPLES_2D = [
+            { name: 'Parabol', formula: 'y=x^2', desc: 'y = x²' },
+            { name: 'Sine', formula: 'y=sin(x)', desc: 'y = sin(x)' },
+            { name: 'Cosine', formula: 'y=cos(x)', desc: 'y = cos(x)' },
+            { name: 'Line', formula: 'y=1-x', desc: 'y = 1-x' },
+            { name: 'Vertical', formula: 'x=1', desc: 'Đường thẳng đứng' },
+            { name: 'Absolute', formula: 'y=abs(x)', desc: 'y = |x|' },
+            { name: 'Circle (Origin)', formula: 'x^2+y^2=16', desc: 'Tâm O(0, 0), R=4' },
+            // <CHANGE> Added circle with non-zero center
+            { name: 'Circle (Center)', formula: '(x-1)^2+(y+2)^2=9', desc: 'Tâm C(1, -2), R=3' } 
+        ];
+
+        const EXAMPLES_3D = [
+            { name: 'Parabol', formula: 'z=x^2 + y^2', desc: 'z = x² + y²' },
+            { name: 'Saddle', formula: 'z=x^2 - y^2', desc: 'z = x² - y²' },
+            { name: 'Wave', formula: 'z=sin(x)*cos(y)', desc: 'z = sin(x)cos(y)' },
+            { name: 'Plane', formula: 'z=x+y', desc: 'z = x+y' },
+            { name: 'Sphere', formula: 'z=sqrt(25 - x^2 - y^2)', desc: 'z = √(25-x²-y²)' },
+            { name: 'Ripple', formula: 'z=sin(sqrt(x^2+y^2))', desc: 'z = sin(√(x²+y²))' }
+        ];
+
+        const COLORS = [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', 
+            '#98D8C8', '#F7DC6F', '#BB8FCE'
+        ];
+
+        // ============ EQUATION PARSING ============
+        // <FIX> Improved parseEquation to support circle equations
+        function parseEquation(input) {
+            const trimmed = input.trim().toLowerCase();
+
+            // Handle equations with =
+            if (trimmed.includes('=')) {
+                const parts = trimmed.split('=');
+                const left = parts[0].trim();
+                const right = parts[1].trim();
+
+                // Check for vertical line: x=c
+                if (left === 'x' && /^-?\d+\.?\d*$/.test(right)) {
+                    return { type: 'vertical', value: parseFloat(right) };
+                }
+
+                // Check for horizontal line: y=c
+                if (left === 'y' && /^-?\d+\.?\d*$/.test(right)) {
+                    return { type: 'horizontal', value: parseFloat(right) };
+                }
+
+                // FIX: Check for circle equation: (x-a)^2 + (y-b)^2 = R^2 or x^2 + y^2 = R^2
+                // Check if it contains x^2 or the form (x+/-...)^2
+                const hasXTerm = left.includes('x^2') || left.match(/\(x[+-][^\)]*\)\^2/i);
+                // Check if it contains y^2 or the form (y+/-...)^2
+                const hasYTerm = left.includes('y^2') || left.match(/\(y[+-][^\)]*\)\^2/i);
+
+                if (hasXTerm && hasYTerm) {
+                    return parseCircleEquation(left, right);
+                }
+
+
+                // Handle y = f(x) for 2D
+                if (state.mode === '2d') {
+                    if (left === 'y') {
+                        return { type: 'function', value: right };
+                    }
+                }
+
+                // Handle z = f(x,y) for 3D
+                if (state.mode === '3d') {
+                    if (left === 'z') {
+                        return { type: 'function', value: right };
+                    }
+                }
+            }
+
+            // Default: treat as function
+            return { type: 'function', value: trimmed };
+        }
+
+        // <FIX> Parse circle equations like x^2+y^2=9 or (x-a)^2+(y-b)^2=R^2
+        function parseCircleEquation(left, right) {
+            try {
+                let centerX = 0;
+                let centerY = 0;
+                let radiusSquared = 0;
+
+                // Extract radius squared from the right side (assuming standard form)
+                if (/^-?\d+\.?\d*$/.test(right)) {
+                    radiusSquared = parseFloat(right);
+                } else {
+                    radiusSquared = evaluateExpression(right, { x: 0, y: 0, z: 0 }); // Use a safer evaluation
+                }
+
+                // Extract center from the left side: (x-a)^2 or x^2
+                // Improved regex: matches (x-1)^2 or (x+2)^2 without requiring spaces
+                const xMatch = left.match(/\(x([+\-])(\d+\.?\d*)\)\^2/i);
+                
+                if (xMatch) {
+                    const operator = xMatch[1]; // e.g., '-' or '+'
+                    const value = parseFloat(xMatch[2]); // e.g., '1' or '2'
+                    // Center is opposite sign: (x-a) -> a, (x+a) -> -a
+                    centerX = operator === '-' ? value : -value;
+                }
+                // Handle the case where left side contains x^2 only (centerX = 0)
+                else if (left.includes('x^2')) {
+                    centerX = 0;
+                } else {
+                    // Fallback to 0 if the term is not found (e.g., conic section without x^2)
+                    // For a circle, we assume either (x-a)^2 or x^2 is present.
+                    centerX = 0;
+                }
+                
+                // Extract Y center
+                const yMatch = left.match(/\(y([+\-])(\d+\.?\d*)\)\^2/i);
+                
+                if (yMatch) {
+                    const operator = yMatch[1];
+                    const value = parseFloat(yMatch[2]);
+                    centerY = operator === '-' ? value : -value;
+                }
+                // Handle the case where left side contains y^2 only (centerY = 0)
+                else if (left.includes('y^2')) {
+                    centerY = 0;
+                } else {
+                    centerY = 0;
+                }
+
+                if (radiusSquared > 0) {
+                    return {
+                        type: 'circle',
+                        radius: Math.sqrt(radiusSquared),
+                        centerX: centerX,
+                        centerY: centerY,
+                    };
+                }
+
+            } catch (e) {
+                console.error("Error parsing circle equation:", e);
+            }
+            
+            // Fallback if parsing fails
+            return { type: 'function', value: left };
+        }
+
+        // ============ EXPRESSION EVALUATION ============
+        function evaluateExpression(expression, variables) {
+            let expr = expression.toLowerCase();
+
+            // Replace variables
+            Object.entries(variables).forEach(([key, value]) => {
+                expr = expr.replace(
+                    new RegExp(`\\b${key}\\b`, 'g'),
+                    `(${value})`
+                );
+            });
+
+            // Replace math functions
+            expr = expr.replace(/sin\(/g, 'Math.sin(');
+            expr = expr.replace(/cos\(/g, 'Math.cos(');
+            expr = expr.replace(/tan\(/g, 'Math.tan(');
+            expr = expr.replace(/sqrt\(/g, 'Math.sqrt(');
+            expr = expr.replace(/abs\(/g, 'Math.abs(');
+            expr = expr.replace(/exp\(/g, 'Math.exp(');
+            expr = expr.replace(/log\(/g, 'Math.log(');
+            expr = expr.replace(/log10\(/g, 'Math.log10(');
+            expr = expr.replace(/pow\(/g, 'Math.pow(');
+            expr = expr.replace(/asin\(/g, 'Math.asin(');
+            expr = expr.replace(/acos\(/g, 'Math.acos(');
+            expr = expr.replace(/atan\(/g, 'Math.atan(');
+            expr = expr.replace(/sinh\(/g, 'Math.sinh(');
+            expr = expr.replace(/cosh\(/g, 'Math.cosh(');
+            expr = expr.replace(/tanh\(/g, 'Math.tanh(');
+
+            // Replace operators
+            expr = expr.replace(/\^/g, '**');
+            expr = expr.replace(/π/g, 'Math.PI');
+            expr = expr.replace(/\be\b/g, 'Math.E');
+
+            try {
+                return eval(expr);
+            } catch {
+                return NaN;
+            }
+        }
+
+        // ============ UI MANAGEMENT ============
+        function updateExamples() {
+            const container = document.getElementById('examplesContainer');
+            const examples = state.mode === '3d' ? EXAMPLES_3D : EXAMPLES_2D;
+            const modeHint = document.getElementById('modeHint');
+
+            if (state.mode === '2d') {
+                modeHint.textContent = `📋 Chế độ 2D:
+Nhập dạng: y = f(x), x=c
+VD: sin(x), x^2, log(x)
+Hoặc đường tròn: (x-a)^2+(y-b)^2=R^2
+VD: (x-1)^2+(y+2)^2=9`;
+            } else {
+                modeHint.textContent = `📋 Chế độ 3D:
+Nhập dạng: z = f(x,y)
+VD: x^2+y^2, sin(x)*cos(y)
+Lưu ý: Đường tròn 2D sẽ được vẽ dưới dạng hình trụ (Cylinder) trong không gian 3D.`;
+            }
+
+            if (!state.showExamples) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = examples
+                .map((ex, idx) => `
+                    <button
+                        class="example-btn"
+                        onclick="addFunctionFromExample('${ex.formula}')"
+                    >
+                        <div class="name">${ex.name}</div>
+                        <div class="formula">${ex.formula}</div>
+                        <div class="desc">${ex.desc}</div>
+                    </button>
+                `)
+                .join('');
+        }
+
+        function toggleExamples() {
+            state.showExamples = !state.showExamples;
+            document.getElementById('exampleToggle').textContent = 
+                state.showExamples ? '▼' : '▶';
+            updateExamples();
+        }
+
+        function addFunctionFromExample(formula) {
+            document.getElementById('functionInput').value = formula;
+            addFunction();
+        }
+
+        function addFunction() {
+            const input = document.getElementById('functionInput');
+            let expression = input.value.trim();
+
+            if (!expression) return;
+
+            const parsed = parseEquation(expression);
+            const id = Math.random().toString(36).substr(2, 9);
+            const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+
+            state.functions.push({
+                id,
+                type: parsed.type,
+                expression: parsed.value || parsed.radius, // for circle, this is R
+                centerX: parsed.centerX || 0,
+                centerY: parsed.centerY || 0,
+                color,
+                originalInput: expression
+            });
+
+            input.value = '';
+            updateFunctionsList();
+            render();
+        }
+
+        function removeFunction(id) {
+            state.functions = state.functions.filter(f => f.id !== id);
+            updateFunctionsList();
+            render();
+        }
+
+        function updateFunctionsList() {
+            const list = document.getElementById('functionsList');
+
+            if (state.functions.length === 0) {
+                list.innerHTML = 
+                    '<div class="empty-message">Chưa có phương trình nào</div>';
+                return;
+            }
+
+            list.innerHTML = state.functions
+                .map(func => `
+                    <div class="function-item">
+                        <div
+                            class="function-color"
+                            style="background-color: ${func.color}"
+                        ></div>
+                        <div class="function-expr">${func.originalInput}</div>
+                        <button
+                            class="delete-btn"
+                            onclick="removeFunction('${func.id}')"
+                        >
+                            Xóa
+                        </button>
+                    </div>
+                `)
+                .join('');
+        }
+
+        function switchMode(mode) {
+            state.mode = mode;
+            const canvas2d = document.getElementById('canvas2d');
+            const canvas3d = document.getElementById('canvas3d');
+
+            if (mode === '2d') {
+                canvas2d.classList.remove('hidden');
+                canvas3d.classList.add('hidden');
+            } else {
+                canvas2d.classList.add('hidden');
+                canvas3d.classList.remove('hidden');
+            }
+
+            updateExamples();
+            render();
+        }
+
+        // ============ 2D RENDERING ============
+        function render2D() {
+            const canvas = document.getElementById('canvas2d');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const scale = 40;
+
+            // <CHANGE> Adjust canvas background based on theme
+            const isDark = document.documentElement.classList.contains('dark-mode');
+            canvas.style.background = isDark ? '#2a2a2a' : 'white';
+
+            // Draw axes
+            ctx.strokeStyle = isDark ? '#e0e0e0' : '#000';
+            ctx.lineWidth = 2;
+
+            // X axis
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(canvas.width, centerY);
+            ctx.stroke();
+
+            // Y axis
+            ctx.beginPath();
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, canvas.height);
+            ctx.stroke();
+
+            // Draw grid
+            ctx.strokeStyle = isDark ? '#404040' : '#e0e0e0';
+            ctx.lineWidth = 1;
+
+            for (let i = -50; i <= 50; i++) {
+                if (i !== 0) {
+                    // Vertical grid lines
+                    ctx.beginPath();
+                    ctx.moveTo(centerX + i * scale, 0);
+                    ctx.lineTo(centerX + i * scale, canvas.height);
+                    ctx.stroke();
+
+                    // Horizontal grid lines
+                    ctx.beginPath();
+                    ctx.moveTo(0, centerY + i * scale);
+                    ctx.lineTo(canvas.width, centerY + i * scale);
+                    ctx.stroke();
+                }
+            }
+
+            // Draw axis labels
+            ctx.fillStyle = isDark ? '#e0e0e0' : '#000';
+            ctx.font = '12px Arial';
+            ctx.fillText('X', canvas.width - 20, centerY + 15);
+            ctx.fillText('Y', centerX - 15, 15);
+
+            // <CHANGE> Draw all functions including circles
+            state.functions.forEach(func => {
+                ctx.strokeStyle = func.color;
+                ctx.lineWidth = 2;
+
+                if (func.type === 'vertical') {
+                    const px = centerX + func.expression * scale;
+                    ctx.beginPath();
+                    ctx.moveTo(px, 0);
+                    ctx.lineTo(px, canvas.height);
+                    ctx.stroke();
+
+                } else if (func.type === 'horizontal') {
+                    const py = centerY - func.expression * scale;
+                    ctx.beginPath();
+                    ctx.moveTo(0, py);
+                    ctx.lineTo(canvas.width, py);
+                    ctx.stroke();
+
+                } else if (func.type === 'circle') {
+                    // <CHANGE> Draw circle with center (centerX, centerY)
+                    const radius = func.expression * scale; // func.expression is R
+                    const cx = centerX + func.centerX * scale;
+                    const cy = centerY - func.centerY * scale;
+
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+                    ctx.stroke();
+
+                } else {
+                    // Regular function: y = f(x)
+                    ctx.beginPath();
+                    for (let px = 0; px < canvas.width; px++) {
+                        const x = (px - centerX) / scale;
+                        try {
+                            const y = evaluateExpression(func.expression, { x });
+                            const py = centerY - y * scale;
+
+                            if (px === 0) {
+                                ctx.moveTo(px, py);
+                            } else {
+                                ctx.lineTo(px, py);
+                            }
+                        } catch (e) {}
+                    }
+                    ctx.stroke();
+                }
+            });
+        }
+
+        // ============ 3D RENDERING ============
+        function init3D() {
+            const container = document.getElementById('canvas3d');
+            if (state.scene) return;
+
+            const scene = new THREE.Scene();
+            const isDark = document.documentElement.classList.contains('dark-mode');
+            scene.background = new THREE.Color(isDark ? 0x2a2a2a : 0xfafafa);
+            state.scene = scene;
+
+            const camera = new THREE.PerspectiveCamera(
+                75,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(8, 8, 8);
+            camera.lookAt(0, 0, 0);
+            state.camera = camera;
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+            state.renderer = renderer;
+
+            const axesHelper = new THREE.AxesHelper(5);
+            scene.add(axesHelper);
+
+            const gridHelper = new THREE.GridHelper(10, 10, 0xcccccc, 0xeeeeee);
+            scene.add(gridHelper);
+
+            const light = new THREE.DirectionalLight(0xffffff, 0.7);
+            light.position.set(5, 5, 5);
+            scene.add(light);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+            scene.add(ambientLight);
+
+            // Mouse controls
+            let isDragging = false;
+            let previousMousePosition = { x: 0, y: 0 };
+
+            renderer.domElement.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            renderer.domElement.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+
+                const deltaX = e.clientX - previousMousePosition.x;
+                const deltaY = e.clientY - previousMousePosition.y;
+
+                camera.position.applyAxisAngle(
+                    new THREE.Vector3(0, 1, 0),
+                    deltaX * 0.01
+                );
+                camera.position.applyAxisAngle(
+                    new THREE.Vector3()
+                        .crossVectors(
+                            camera.position,
+                            new THREE.Vector3(0, 0, 1)
+                        )
+                        .normalize(),
+                    deltaY * 0.01
+                );
+
+                camera.lookAt(0, 0, 0);
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            renderer.domElement.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            // Zoom controls
+            renderer.domElement.addEventListener('wheel', (e) => {
+                e.preventDefault();
+
+                const currentDistance = state.camera.position.length();
+                const zoomSensitivity = 1.2;
+                let newDistance;
+
+                if (e.deltaY < 0) {
+                    newDistance = currentDistance / zoomSensitivity;
+                } else {
+                    newDistance = currentDistance * zoomSensitivity;
+                }
+
+                if (newDistance > 2 && newDistance < 100) {
+                    const direction = state.camera.position.clone().normalize();
+                    state.zoomLevel = newDistance / 8;
+                    state.camera.position.copy(
+                        direction.multiplyScalar(newDistance)
+                    );
+                    state.camera.lookAt(0, 0, 0);
+
+                    const zoomInfo = document.getElementById('zoomInfo');
+                    zoomInfo.textContent = `Zoom: ${(
+                        state.zoomLevel * 100
+                    ).toFixed(0)}%`;
+                    zoomInfo.classList.add('visible');
+
+                    clearTimeout(zoomInfo.timeout);
+                    zoomInfo.timeout = setTimeout(
+                        () => zoomInfo.classList.remove('visible'),
+                        1000
+                    );
+                }
+            });
+
+            // Handle resize
+            window.addEventListener('resize', () => {
+                if (state.renderer) {
+                    const width = container.clientWidth;
+                    const height = container.clientHeight;
+
+                    state.camera.aspect = width / height;
+                    state.camera.updateProjectionMatrix();
+                    state.renderer.setSize(width, height);
+                }
+            });
+
+            // Animation loop
+            const animate = () => {
+                requestAnimationFrame(animate);
+                state.renderer.render(state.scene, state.camera);
+            };
+            animate();
+        }
+
+        function render3D() {
+            if (!state.scene) {
+                init3D();
+            }
+
+            // <CHANGE> Update background color based on theme
+            const isDark = document.documentElement.classList.contains('dark-mode');
+            state.scene.background = new THREE.Color(
+                isDark ? 0x2a2a2a : 0xfafafa
+            );
+
+            state.meshes.forEach(mesh => {
+                state.scene.remove(mesh);
+            });
+            state.meshes = [];
+
+            state.functions.forEach(func => {
+                try {
+                    if (func.type === 'vertical') {
+                        const geometry = new THREE.PlaneGeometry(0.1, 10, 1, 10);
+                        const material = new THREE.MeshPhongMaterial({
+                            color: func.color,
+                            side: THREE.DoubleSide,
+                            transparent: true,
+                            opacity: 0.7
+                        });
+                        const mesh = new THREE.Mesh(geometry, material);
+                        mesh.position.x = func.expression;
+                        mesh.rotation.y = Math.PI / 2;
+                        state.scene.add(mesh);
+                        state.meshes.push(mesh);
+
+                    } else if (func.type === 'horizontal') {
+                        const geometry = new THREE.PlaneGeometry(10, 10, 10, 10);
+                        const material = new THREE.MeshPhongMaterial({
+                            color: func.color,
+                            side: THREE.DoubleSide,
+                            transparent: true,
+                            opacity: 0.7
+                        });
+                        const mesh = new THREE.Mesh(geometry, material);
+                        mesh.position.z = func.expression; // assuming z=const
+                        state.scene.add(mesh);
+                        state.meshes.push(mesh);
+                        
+                    // <CHANGE> Render 2D circle as 3D cylinder
+                    } else if (func.type === 'circle') {
+                        const radius = func.expression;
+                        const centerX = func.centerX;
+                        const centerY = func.centerY; // Corresponds to z in 3D (assuming circle is in XY plane)
+
+                        const geometry = new THREE.CylinderGeometry(
+                            radius, // radiusTop
+                            radius, // radiusBottom
+                            20,     // height (high value for 'infinite' look)
+                            64,     // radialSegments
+                            1,      // heightSegments
+                            true    // openEnded (no top/bottom caps)
+                        );
+
+                        const material = new THREE.MeshBasicMaterial({
+                            color: func.color,
+                            wireframe: true,
+                            transparent: true,
+                            opacity: 0.5
+                        });
+
+                        const mesh = new THREE.Mesh(geometry, material);
+                        
+                        // Position in 3D space: Center (a, b) in XZ plane, y-axis is height
+                        // Map (x, y) 2D to (x, y, z) 3D: (x, y) -> (x, 0, y)
+                        // Wait, in Three.js, Y is UP. We map (x, y) 2D -> (x, y, 0) 3D, and the cylinder extends along Z.
+                        // Let's stick to the common math convention: 2D (x,y) -> 3D (x,y,0) in the XY plane.
+                        // Since Three.js uses Y for UP/Vertical, we map 2D y-coordinate (centerY) to 3D Y-coordinate.
+                        
+                        // New mapping: 2D (x, y) -> 3D (x, y, 0)
+                        // Cylinder extends along Z-axis (depth) to be visible in the plane.
+                        
+                        mesh.position.set(centerX, centerY, 0); 
+                        // To make it stand up (parallel to Y axis, the default axis for cylinder height)
+                        // we rotate it back to be parallel to the Z axis (to simulate a 2D object on the XY plane)
+                        
+                        mesh.rotation.x = Math.PI / 2; // Keep the rotation to align with Z axis
+
+                        state.scene.add(mesh);
+                        state.meshes.push(mesh);
+                        
+                    } else {
+                        // <CHANGE> Render surface (both positive and negative for sqrt)
+                        renderSurface(func.expression, func.color, false);
+                        if (func.expression.includes('sqrt')) {
+                            renderSurface(func.expression, func.color, true);
+                        }
+                    }
+                } catch (e) {
+                    console.error(`Error plotting function: ${func.originalInput}`);
+                }
+            });
+        }
+
+        // <CHANGE> Helper function to render surfaces
+        function renderSurface(expression, color, isNegative) {
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            const indices = [];
+
+            const range = 5;
+            const step = 0.3;
+            let vertexIndex = 0;
+
+            const verticesPerRow = Math.round((range * 2) / step) + 1;
+
+            for (let x = -range; x <= range; x += step) {
+                for (let y = -range; y <= range; y += step) {
+                    try {
+                        let z = evaluateExpression(expression, { x, y });
+
+                        if (isNegative) {
+                            z = -z;
+                        }
+
+                        if (
+                            typeof z === 'number' &&
+                            isFinite(z) &&
+                            Math.abs(z) < 50
+                        ) {
+                            // In three.js, Y is vertical, Z is depth. 
+                            // Standard math Z (output) is three.js Y (vertical).
+                            // Standard math Y (input) is three.js Z (depth).
+                            vertices.push(x, z, y); 
+                            vertexIndex++;
+                        }
+                    } catch (e) {}
+                }
+            }
+
+            if (vertices.length > 0) {
+                geometry.setAttribute(
+                    'position',
+                    new THREE.BufferAttribute(new Float32Array(vertices), 3)
+                );
+
+                if (indices.length > 0) {
+                    geometry.setIndex(
+                        new THREE.BufferAttribute(new Uint32Array(indices), 1)
+                    );
+                }
+
+                geometry.computeVertexNormals();
+
+                const material = new THREE.MeshPhongMaterial({
+                    color: color,
+                    emissive: 0x000000,
+                    shininess: 100,
+                    side: THREE.DoubleSide
+                });
+
+                const mesh = new THREE.Mesh(geometry, material);
+                state.scene.add(mesh);
+                state.meshes.push(mesh);
+            }
+        }
+
+        // ============ MAIN RENDER FUNCTION ============
+        function render() {
+            if (state.mode === '2d') {
+                render2D();
+            } else {
+                render3D();
+            }
+        }
+
+        // ============ EVENT LISTENERS ============
+        document.getElementById('modeSelect').addEventListener('change', (e) => {
+            switchMode(e.target.value);
+        });
+
+        document.getElementById('functionInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addFunction();
+            }
+        });
+
+        // ============ INITIALIZE ============
+        initTheme();
+        updateExamples();
+        updateFunctionsList();
+        render();
+    </script>
+</body>
+</html>
